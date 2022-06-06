@@ -8,7 +8,7 @@
  * @format
  */
 
-import React from 'react';
+import React, {useEffect} from 'react';
 import {
   StatusBar,
   Text,
@@ -17,7 +17,7 @@ import {
   Button,
   TextInput,
   TouchableOpacity,
-  FlatList,
+  ScrollView,
 } from 'react-native';
 
 import {Colors} from 'react-native/Libraries/NewAppScreen';
@@ -26,139 +26,162 @@ import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import Modal from 'react-native-modal';
 import {useState} from 'react';
 import SelectDropdown from 'react-native-select-dropdown';
+import axios from 'axios';
+import {Formik} from 'formik';
+import * as yup from 'yup';
+
+// env variables
+const REACT_APP_API_URL = 'http://192.168.1.98:8000/api/';
 
 function DashboardScreen() {
   const [isModalVisible, setModalVisible] = useState(false);
   const [modalEditNote, setModalEditNote] = useState(0);
   const [modalEditGroup, setModalEditGroup] = useState(0);
   const [modalCreateNote, setModalCreateNote] = useState(0);
+  const [notesData, setNotesData] = useState<any[]>([]);
+  const [groupsData, setGroupsData] = useState<any[]>([]);
 
-  const toggleModal = () => {
+  // validate form
+  const createGroupValidate = yup.object().shape({
+    groupName: yup.string().required('groupName is required'),
+  });
+
+  const createNoteValidate = yup.object().shape({
+    name: yup.string().required('name is required'),
+    description: yup.string().required('description is required'),
+    group: yup.string().required('group is required'),
+  });
+
+  // api call
+  const createGroup = async (values: any) => {
+    await axios.post(`${REACT_APP_API_URL}groups/`, values);
     setModalVisible(!isModalVisible);
+    fetchData();
   };
-  const groupData = [
-    {
-      id: 1,
-      name: 'Group 1',
-    },
-    {
-      id: 2,
-      name: 'Group 2',
-    },
-    {
-      id: 3,
-      name: 'Group 3',
-    },
-    {
-      id: 4,
-      name: 'Group 4',
-    },
-  ];
 
-  const notesData = [
-    {
-      id: 1,
-      name: 'John',
-      description:
-        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam euismod, nisi vel consectetur interdum, nisl nisl maximus erat, eget tincidunt nisl nisl euismod erat. Nulla facilisi. Nulla facilisi.',
-      groupId: 1,
-    },
-    {
-      id: 2,
-      name: 'Jane',
-      description:
-        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam euismod, nisi vel consectetur interdum, nisl nisl maximus erat, eget tincidunt nisl nisl euismod erat. Nulla facilisi. Nulla facilisi.',
+  const createNote = async (values: any) => {
+    await axios.post(`${REACT_APP_API_URL}notes/`, values);
+    setModalCreateNote(0);
+    fetchData();
+  };
 
-      groupId: 1,
-    },
-    {
-      id: 3,
-      name: 'Jack',
-      description:
-        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam euismod, nisi vel consectetur interdum, nisl nisl maximus erat, eget tincidunt nisl nisl euismod erat. Nulla facilisi. Nulla facilisi.',
+  const updateNote = async (values: any) => {
+    await axios.put(`${REACT_APP_API_URL}notes/${modalEditNote}/`, {
+      ...values,
+      id: modalEditNote,
+    });
+    setModalEditNote(0);
+    fetchData();
+  };
 
-      groupId: 2,
-    },
-    {
-      id: 4,
-      name: 'Jill',
-      description:
-        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam euismod, nisi vel consectetur interdum, nisl nisl maximus erat, eget tincidunt nisl nisl euismod erat. Nulla facilisi. Nulla facilisi.',
+  const deleteNote = async () => {
+    await axios.delete(`${REACT_APP_API_URL}note/delete/${modalEditNote}`);
+    setModalEditNote(0);
+    fetchData();
+  };
 
-      groupId: 3,
-    },
-    {
-      id: 5,
-      name: 'John',
-      description:
-        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam euismod, nisi vel consectetur interdum, nisl nisl maximus erat, eget tincidunt nisl nisl euismod erat. Nulla facilisi. Nulla facilisi.',
+  // helper
+  const currentNote = () => {
+    const filteredNote = notesData.find(note => note.id === modalEditNote);
+    return filteredNote ?? {name: '', description: '', group: ''};
+  };
 
-      groupId: 4,
-    },
-  ];
+  async function fetchData() {
+    setNotesData(
+      (await axios.get((REACT_APP_API_URL + 'notes') as string)).data,
+    );
+    setGroupsData(
+      (await axios.get((REACT_APP_API_URL + 'groups') as string)).data,
+    );
+  }
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const groups = groupsData.map(group => {
+    return (
+      <TouchableOpacity
+        key={group.id}
+        onPress={() => {
+          setModalEditGroup(group.id);
+        }}>
+        <View>
+          <Text
+            style={{
+              textAlign: 'center',
+              padding: 10,
+              fontWeight: 'bold',
+              backgroundColor: 'red',
+            }}>
+            {group.name}
+          </Text>
+
+          {notesData
+            .filter(note => note.groupId === group.id)
+            .map(note => {
+              return (
+                <TouchableOpacity
+                  key={note.id}
+                  style={{
+                    backgroundColor: 'gray',
+                    margin: 10,
+                  }}
+                  onPress={() => {
+                    setModalEditNote(note.id);
+                  }}>
+                  <View>
+                    <Text>{note.description}</Text>
+                    <Text
+                      style={{
+                        textAlign: 'center',
+                        fontWeight: 'bold',
+                        fontSize: 20,
+                      }}>
+                      {note.name}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+        </View>
+        <View
+          style={{
+            margin: 20,
+          }}>
+          <Button
+            title="Add note"
+            onPress={() => setModalCreateNote(group.id)}
+          />
+        </View>
+      </TouchableOpacity>
+    );
+  });
 
   return (
     <>
-      <Button title="Create Group" onPress={toggleModal} />
-      <FlatList
-        data={groupData}
-        renderItem={({item}) => {
-          return (
-            <>
-              <TouchableOpacity
-                onPress={() => {
-                  setModalEditGroup(item.id);
-                }}>
-                <View>
-                  <Text
-                    style={{
-                      textAlign: 'center',
-                      padding: 10,
-                      fontWeight: 'bold',
-                      backgroundColor: 'red',
-                    }}>
-                    {item.name}
-                  </Text>
-
-                  {notesData
-                    .filter(note => note.groupId === item.id)
-                    .map(note => {
-                      return (
-                        <TouchableOpacity
-                          style={{
-                            backgroundColor: 'gray',
-                            margin: 10,
-                          }}
-                          onPress={() => {
-                            setModalEditNote(note.id);
-                          }}>
-                          <View>
-                            <Text>{note.description}</Text>
-                            <Text
-                              style={{
-                                textAlign: 'center',
-                                fontWeight: 'bold',
-                                fontSize: 20,
-                              }}>
-                              {note.name}
-                            </Text>
-                          </View>
-                        </TouchableOpacity>
-                      );
-                    })}
-                </View>
-                <View
-                  style={{
-                    margin: 20,
-                  }}>
-                  <Button
-                    title="Add note"
-                    onPress={() => setModalCreateNote(item.id)}
-                  />
-                </View>
-              </TouchableOpacity>
-              {/* Create group note modal */}
-              <Modal isVisible={isModalVisible}>
+      <Button
+        title="Create Group"
+        onPress={() => setModalVisible(!isModalVisible)}
+      />
+      <ScrollView>
+        <>
+          {groups}
+          {/* Create group note modal */}
+          <Modal isVisible={isModalVisible}>
+            <Formik
+              validationSchema={createGroupValidate}
+              initialValues={{groupName: ''}}
+              onSubmit={values => createGroup(values)}>
+              {({
+                handleChange,
+                handleBlur,
+                handleSubmit,
+                values,
+                errors,
+                touched,
+                isValid,
+              }) => (
                 <View
                   style={{
                     justifyContent: 'center',
@@ -172,116 +195,225 @@ function DashboardScreen() {
                       width: '80%',
                       borderWidth: 2,
                     }}
+                    onChangeText={handleChange('groupName')}
+                    onBlur={handleBlur('groupName')}
+                    value={values.groupName}
                   />
+                  {errors.groupName && touched.groupName && (
+                    <Text>{errors.groupName}</Text>
+                  )}
+
                   <View>
-                    <Button title="Cancel" onPress={toggleModal} />
-                    <Button title="Save" onPress={toggleModal} />
+                    <Button
+                      title="Cancel"
+                      onPress={() => setModalVisible(!isModalVisible)}
+                    />
+                    <Button
+                      title="Save"
+                      disabled={!isValid}
+                      onPress={handleSubmit}
+                    />
                   </View>
                 </View>
-              </Modal>
-              {/* Edit group note modal */}
-              <Modal isVisible={modalEditNote > 0}>
-                <View
-                  style={{
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    backgroundColor: '#fff',
-                    height: 300,
-                  }}>
-                  <Text>Edit Note</Text>
-                  <TextInput
+              )}
+            </Formik>
+          </Modal>
+          {/* Edit group note modal */}
+          <Modal isVisible={modalEditNote > 0}>
+            <Formik
+              validationSchema={createNoteValidate}
+              initialValues={{
+                name: currentNote().name,
+                description: currentNote().description,
+                group: '',
+              }}
+              onSubmit={values => updateNote(values)}>
+              {({
+                handleChange,
+                handleBlur,
+                handleSubmit,
+                values,
+                errors,
+                touched,
+                isValid,
+              }) => (
+                <>
+                  <View
                     style={{
-                      width: '80%',
-                      borderWidth: 2,
-                    }}
-                    defaultValue={
-                      modalEditNote > 0
-                        ? notesData[modalEditNote - 1].description
-                        : ''
-                    }
-                  />
-                  <Text>Move to</Text>
-                  {/* Select group to move to */}
-                  <SelectDropdown
-                    data={groupData.map(group => group.name)}
-                    onSelect={(selectedItem, index) => {
-                      console.log(selectedItem, index);
-                    }}
-                    buttonTextAfterSelection={selectedItem => {
-                      return selectedItem;
-                    }}
-                    rowTextForSelection={option => {
-                      // text represented for each item in dropdown
-                      // if data array is an array of objects then return item.property to represent item in dropdown
-                      return option;
-                    }}
-                    defaultValue={
-                      groupData.find(
-                        group =>
-                          group.id ===
-                          notesData.find(note => note.id === modalEditNote)
-                            ?.groupId,
-                      )?.name ?? 'Select an option'
-                    }
-                  />
-                </View>
-                <View>
-                  <Button title="Cancel" onPress={() => setModalEditNote(0)} />
-                  <Button title="Save" onPress={() => setModalEditNote(0)} />
-                  <Button title="Delete" onPress={() => setModalEditNote(0)} />
-                </View>
-              </Modal>
-              {/* Edit group modal */}
-              <Modal isVisible={modalEditGroup > 0}>
-                <View
-                  style={{
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    backgroundColor: '#fff',
-                    height: 300,
-                  }}>
-                  <Text>Edit Note</Text>
-                  <TextInput
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      backgroundColor: '#fff',
+                      height: 300,
+                    }}>
+                    <Text>Note Name</Text>
+                    <TextInput
+                      style={{
+                        width: '80%',
+                        borderWidth: 2,
+                      }}
+                      onChangeText={handleChange('name')}
+                      onBlur={handleBlur('name')}
+                      value={values.name}
+                    />
+                    {errors.name && touched.name && <Text>{errors.name}</Text>}
+                    <Text>Note Description</Text>
+                    <TextInput
+                      style={{
+                        width: '80%',
+                        borderWidth: 2,
+                      }}
+                      onChangeText={handleChange('description')}
+                      onBlur={handleBlur('description')}
+                      value={values.description}
+                    />
+                    {errors.description && touched.description && (
+                      <Text>{errors.description}</Text>
+                    )}
+                    {/* Select group to create in */}
+                    <Text>Group</Text>
+                    <SelectDropdown
+                      data={groupsData.map(group => group.name)}
+                      onSelect={selectedItem => {
+                        values.group = selectedItem;
+                      }}
+                      buttonTextAfterSelection={selectedItem => {
+                        return selectedItem;
+                      }}
+                      rowTextForSelection={option => {
+                        // text represented for each item in dropdown
+                        // if data array is an array of objects then return item.property to represent item in dropdown
+                        return option;
+                      }}
+                      defaultValue={
+                        groupsData.find(
+                          group =>
+                            group.id ===
+                            notesData.find(note => note.id === modalEditNote)
+                              ?.groupId,
+                        )?.name ?? 'Select an option'
+                      }
+                    />
+                    {errors.group && touched.group && (
+                      <Text>{errors.group}</Text>
+                    )}
+                  </View>
+                  <View>
+                    <Button
+                      title="Cancel"
+                      onPress={() => setModalEditNote(0)}
+                    />
+                    <Button
+                      title="Save"
+                      disabled={!isValid}
+                      onPress={handleSubmit}
+                    />
+                    <Button title="Delete" onPress={deleteNote} />
+                  </View>
+                </>
+              )}
+            </Formik>
+          </Modal>
+          {/* Edit group modal */}
+          <Modal isVisible={modalEditGroup > 0}>
+            <View
+              style={{
+                justifyContent: 'center',
+                alignItems: 'center',
+                backgroundColor: '#fff',
+                height: 300,
+              }}>
+              <Text>Edit Note</Text>
+              <TextInput
+                style={{
+                  width: '80%',
+                  borderWidth: 2,
+                }}
+                defaultValue={
+                  modalEditGroup > 0 ? groupsData[modalEditGroup - 1].name : ''
+                }
+              />
+            </View>
+            <View>
+              <Button title="Cancel" onPress={() => setModalEditGroup(0)} />
+              <Button title="Save" onPress={() => setModalEditGroup(0)} />
+              <Button title="Delete" onPress={() => setModalEditGroup(0)} />
+            </View>
+          </Modal>
+          {/* Create note modal */}
+          <Modal isVisible={modalCreateNote > 0}>
+            <Formik
+              validationSchema={createNoteValidate}
+              initialValues={{name: '', description: '', group: ''}}
+              onSubmit={values => createNote(values)}>
+              {({
+                handleChange,
+                handleBlur,
+                handleSubmit,
+                values,
+                errors,
+                touched,
+                isValid,
+              }) => (
+                <>
+                  <View
                     style={{
-                      width: '80%',
-                      borderWidth: 2,
-                    }}
-                    defaultValue={
-                      modalEditGroup > 0
-                        ? groupData[modalEditGroup - 1].name
-                        : ''
-                    }
-                  />
-                </View>
-                <View>
-                  <Button title="Cancel" onPress={() => setModalEditGroup(0)} />
-                  <Button title="Save" onPress={() => setModalEditGroup(0)} />
-                  <Button title="Delete" onPress={() => setModalEditGroup(0)} />
-                </View>
-              </Modal>
-              {/* Create note modal */}
-              <Modal isVisible={modalCreateNote > 0}>
-                <View
-                  style={{
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    backgroundColor: '#fff',
-                    height: 300,
-                  }}>
-                  <Text>Note Name</Text>
-                  <TextInput
-                    style={{
-                      width: '80%',
-                      borderWidth: 2,
-                    }}
-                  />
-                  <Text>Note Description</Text>
-                  <TextInput
-                    style={{
-                      width: '80%',
-                      borderWidth: 2,
-                    }}
-                  />
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      backgroundColor: '#fff',
+                      height: 300,
+                    }}>
+                    <Text>Note Name</Text>
+                    <TextInput
+                      style={{
+                        width: '80%',
+                        borderWidth: 2,
+                      }}
+                      onChangeText={handleChange('name')}
+                      onBlur={handleBlur('name')}
+                      value={values.name}
+                    />
+                    {errors.name && touched.name && <Text>{errors.name}</Text>}
+                    <Text>Note Description</Text>
+                    <TextInput
+                      style={{
+                        width: '80%',
+                        borderWidth: 2,
+                      }}
+                      onChangeText={handleChange('description')}
+                      onBlur={handleBlur('description')}
+                      value={values.description}
+                    />
+                    {errors.description && touched.description && (
+                      <Text>{errors.description}</Text>
+                    )}
+                    {/* Select group to create in */}
+                    <Text>Group</Text>
+                    <SelectDropdown
+                      data={groupsData.map(group => group.name)}
+                      onSelect={selectedItem => {
+                        values.group = selectedItem;
+                      }}
+                      buttonTextAfterSelection={selectedItem => {
+                        return selectedItem;
+                      }}
+                      rowTextForSelection={option => {
+                        // text represented for each item in dropdown
+                        // if data array is an array of objects then return item.property to represent item in dropdown
+                        return option;
+                      }}
+                      defaultValue={
+                        groupsData.find(
+                          group =>
+                            group.id ===
+                            notesData.find(note => note.id === modalEditNote)
+                              ?.groupId,
+                        )?.name ?? 'Select an option'
+                      }
+                    />
+                    {errors.group && touched.group && (
+                      <Text>{errors.group}</Text>
+                    )}
+                  </View>
                   <View>
                     <Button
                       title="Cancel"
@@ -290,18 +422,17 @@ function DashboardScreen() {
                       }}
                     />
                     <Button
+                      disabled={!isValid}
                       title="Create"
-                      onPress={() => {
-                        setModalCreateNote(0);
-                      }}
+                      onPress={handleSubmit}
                     />
                   </View>
-                </View>
-              </Modal>
-            </>
-          );
-        }}
-      />
+                </>
+              )}
+            </Formik>
+          </Modal>
+        </>
+      </ScrollView>
     </>
   );
 }
