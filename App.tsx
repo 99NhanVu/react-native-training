@@ -29,21 +29,70 @@ import SelectDropdown from 'react-native-select-dropdown';
 import axios from 'axios';
 import {Formik} from 'formik';
 import * as yup from 'yup';
+import {createSlice, configureStore} from '@reduxjs/toolkit';
+
+const authSlice = createSlice({
+  name: 'auth',
+  initialState: {
+    value: {id: 0, username: ''},
+  },
+  reducers: {
+    loginAction: (state, {payload}) => {
+      state.value.id = payload.id;
+      state.value.username = payload.username;
+    },
+  },
+});
+
+const {loginAction} = authSlice.actions;
+
+const store = configureStore({
+  reducer: authSlice.reducer,
+});
 
 // env variables
 const REACT_APP_API_URL = 'http://192.168.1.98:8000/api/';
 
-function DashboardScreen() {
+// types
+interface Note {
+  id: number;
+  description: string;
+  name: string;
+  groupId: number;
+}
+
+interface Group {
+  id: number;
+  name: string;
+}
+
+interface CreateNotePayload {
+  description: string;
+  name: string;
+  group: string;
+}
+
+interface CreateGroupPayload {
+  name?: string;
+}
+
+interface LoginPayload {
+  id?: number;
+  username: string;
+  password: string;
+}
+
+function DashboardScreen({navigation}) {
   const [isModalVisible, setModalVisible] = useState(false);
   const [modalEditNote, setModalEditNote] = useState(0);
   const [modalEditGroup, setModalEditGroup] = useState(0);
   const [modalCreateNote, setModalCreateNote] = useState(0);
-  const [notesData, setNotesData] = useState<any[]>([]);
-  const [groupsData, setGroupsData] = useState<any[]>([]);
+  const [notesData, setNotesData] = useState<Note[]>([]);
+  const [groupsData, setGroupsData] = useState<Group[]>([]);
 
   // validate form
   const createGroupValidate = yup.object().shape({
-    groupName: yup.string().required('groupName is required'),
+    name: yup.string().required('name is required'),
   });
 
   const createNoteValidate = yup.object().shape({
@@ -53,19 +102,14 @@ function DashboardScreen() {
   });
 
   // api call
-  const createGroup = async (values: any) => {
-    await axios.post(`${REACT_APP_API_URL}groups/`, values);
-    setModalVisible(!isModalVisible);
-    fetchData();
-  };
 
-  const createNote = async (values: any) => {
+  const createNote = async (values: CreateNotePayload) => {
     await axios.post(`${REACT_APP_API_URL}notes/`, values);
     setModalCreateNote(0);
     fetchData();
   };
 
-  const updateNote = async (values: any) => {
+  const updateNote = async (values: CreateNotePayload) => {
     await axios.put(`${REACT_APP_API_URL}notes/${modalEditNote}/`, {
       ...values,
       id: modalEditNote,
@@ -77,6 +121,27 @@ function DashboardScreen() {
   const deleteNote = async () => {
     await axios.delete(`${REACT_APP_API_URL}note/delete/${modalEditNote}`);
     setModalEditNote(0);
+    fetchData();
+  };
+
+  const createGroup = async (values: CreateGroupPayload) => {
+    await axios.post(`${REACT_APP_API_URL}groups/`, values);
+    setModalVisible(!isModalVisible);
+    fetchData();
+  };
+
+  const deleteGroup = async () => {
+    await axios.delete(`${REACT_APP_API_URL}group/delete/${modalEditGroup}`);
+    setModalEditGroup(0);
+    fetchData();
+  };
+
+  const updateGroup = async (values: CreateGroupPayload) => {
+    await axios.put(`${REACT_APP_API_URL}groups/${modalEditGroup}/`, {
+      ...values,
+      id: modalEditGroup,
+    });
+    setModalEditGroup(0);
     fetchData();
   };
 
@@ -96,8 +161,11 @@ function DashboardScreen() {
   }
 
   useEffect(() => {
+    navigation.setOptions({
+      title: 'Welcome ' + store.getState().value.username.toString(),
+    });
     fetchData();
-  }, []);
+  }, [navigation]);
 
   const groups = groupsData.map(group => {
     return (
@@ -171,7 +239,7 @@ function DashboardScreen() {
           <Modal isVisible={isModalVisible}>
             <Formik
               validationSchema={createGroupValidate}
-              initialValues={{groupName: ''}}
+              initialValues={{name: ''}}
               onSubmit={values => createGroup(values)}>
               {({
                 handleChange,
@@ -195,13 +263,11 @@ function DashboardScreen() {
                       width: '80%',
                       borderWidth: 2,
                     }}
-                    onChangeText={handleChange('groupName')}
-                    onBlur={handleBlur('groupName')}
-                    value={values.groupName}
+                    onChangeText={handleChange('name')}
+                    onBlur={handleBlur('name')}
+                    value={values.name}
                   />
-                  {errors.groupName && touched.groupName && (
-                    <Text>{errors.groupName}</Text>
-                  )}
+                  {errors.name && touched.name && <Text>{errors.name}</Text>}
 
                   <View>
                     <Button
@@ -315,29 +381,60 @@ function DashboardScreen() {
           </Modal>
           {/* Edit group modal */}
           <Modal isVisible={modalEditGroup > 0}>
-            <View
-              style={{
-                justifyContent: 'center',
-                alignItems: 'center',
-                backgroundColor: '#fff',
-                height: 300,
-              }}>
-              <Text>Edit Note</Text>
-              <TextInput
-                style={{
-                  width: '80%',
-                  borderWidth: 2,
-                }}
-                defaultValue={
-                  modalEditGroup > 0 ? groupsData[modalEditGroup - 1].name : ''
-                }
-              />
-            </View>
-            <View>
-              <Button title="Cancel" onPress={() => setModalEditGroup(0)} />
-              <Button title="Save" onPress={() => setModalEditGroup(0)} />
-              <Button title="Delete" onPress={() => setModalEditGroup(0)} />
-            </View>
+            <Formik
+              validationSchema={createGroupValidate}
+              initialValues={{
+                name:
+                  modalEditGroup > 0
+                    ? groupsData.find(group => group.id === modalEditGroup)
+                        ?.name
+                    : '',
+              }}
+              onSubmit={values => updateGroup(values)}>
+              {({
+                handleChange,
+                handleBlur,
+                handleSubmit,
+                values,
+                errors,
+                touched,
+                isValid,
+              }) => (
+                <>
+                  <View
+                    style={{
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      backgroundColor: '#fff',
+                      height: 300,
+                    }}>
+                    <Text>Edit Note</Text>
+                    <TextInput
+                      style={{
+                        width: '80%',
+                        borderWidth: 2,
+                      }}
+                      onChangeText={handleChange('name')}
+                      onBlur={handleBlur('name')}
+                      value={values.name}
+                    />
+                    {errors.name && touched.name && <Text>{errors.name}</Text>}
+                  </View>
+                  <View>
+                    <Button
+                      title="Cancel"
+                      onPress={() => setModalEditGroup(0)}
+                    />
+                    <Button
+                      title="Save"
+                      disabled={!isValid}
+                      onPress={handleSubmit}
+                    />
+                    <Button title="Delete" onPress={deleteGroup} />
+                  </View>
+                </>
+              )}
+            </Formik>
           </Modal>
           {/* Create note modal */}
           <Modal isVisible={modalCreateNote > 0}>
@@ -437,6 +534,87 @@ function DashboardScreen() {
   );
 }
 
+function LoginScreen({navigation}) {
+  const loginValidate = yup.object().shape({
+    username: yup.string().required(),
+    password: yup.string().min(3).required('Password is required'),
+  });
+
+  const login = async (values: LoginPayload) => {
+    const {data} = await axios.post(`${REACT_APP_API_URL}login`, values);
+    if (data.success) {
+      store.dispatch(loginAction(data));
+    }
+  };
+
+  store.subscribe(() => {
+    if (store.getState().value.id > 0) {
+      navigation.navigate('Dashboard');
+    }
+  });
+
+  return (
+    <View>
+      <Formik
+        validationSchema={loginValidate}
+        initialValues={{username: '', password: ''}}
+        onSubmit={values => login(values)}>
+        {({
+          handleChange,
+          handleBlur,
+          handleSubmit,
+          values,
+          errors,
+          touched,
+          isValid,
+        }) => (
+          <View
+            style={{
+              justifyContent: 'center',
+              alignItems: 'center',
+              backgroundColor: '#fff',
+              height: 300,
+            }}>
+            <Text>Username</Text>
+            <TextInput
+              style={{
+                width: '80%',
+                borderWidth: 2,
+              }}
+              onChangeText={handleChange('username')}
+              onBlur={handleBlur('username')}
+              value={values.username}
+            />
+            {errors.username && touched.username && (
+              <Text>{errors.username}</Text>
+            )}
+            <Text>Password</Text>
+            <TextInput
+              style={{
+                width: '80%',
+                borderWidth: 2,
+              }}
+              onChangeText={handleChange('password')}
+              onBlur={handleBlur('password')}
+              value={values.password}
+            />
+            {errors.password && touched.password && (
+              <Text>{errors.password}</Text>
+            )}
+            <View>
+              <Button
+                disabled={!isValid}
+                title="Login"
+                onPress={handleSubmit}
+              />
+            </View>
+          </View>
+        )}
+      </Formik>
+    </View>
+  );
+}
+
 const Stack = createNativeStackNavigator();
 
 const App = () => {
@@ -450,7 +628,8 @@ const App = () => {
           backgroundColor: isDarkMode ? Colors.black : Colors.white,
         }}
       />
-      <Stack.Navigator>
+      <Stack.Navigator initialRouteName="Login">
+        <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Dashboard" component={DashboardScreen} />
       </Stack.Navigator>
     </NavigationContainer>
