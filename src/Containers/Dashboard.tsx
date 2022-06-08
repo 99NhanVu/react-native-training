@@ -1,94 +1,27 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * Generated with the TypeScript template
- * https://github.com/react-native-community/react-native-template-typescript
- *
- * @format
- */
-
-import React, {useEffect} from 'react';
+import axios from 'axios';
+import {useEffect, useState} from 'react';
 import {
-  StatusBar,
-  Text,
-  useColorScheme,
-  View,
   Button,
+  ScrollView,
+  Text,
   TextInput,
   TouchableOpacity,
-  ScrollView,
+  View,
 } from 'react-native';
-
-import {Colors} from 'react-native/Libraries/NewAppScreen';
-import {NavigationContainer} from '@react-navigation/native';
-import {createNativeStackNavigator} from '@react-navigation/native-stack';
-import Modal from 'react-native-modal';
-import {useState} from 'react';
-import SelectDropdown from 'react-native-select-dropdown';
-import axios from 'axios';
-import {Formik} from 'formik';
 import * as yup from 'yup';
-import {createSlice, configureStore} from '@reduxjs/toolkit';
+import {store} from '../Store';
+import Modal from 'react-native-modal';
+import {Formik} from 'formik';
+import SelectDropdown from 'react-native-select-dropdown';
+import React from 'react';
 
-const authSlice = createSlice({
-  name: 'auth',
-  initialState: {
-    value: {id: 0, username: ''},
-  },
-  reducers: {
-    loginAction: (state, {payload}) => {
-      state.value.id = payload.id;
-      state.value.username = payload.username;
-    },
-  },
-});
-
-const {loginAction} = authSlice.actions;
-
-const store = configureStore({
-  reducer: authSlice.reducer,
-});
-
-// env variables
-const REACT_APP_API_URL = 'http://192.168.1.98:8000/api/';
-
-// types
-interface Note {
-  id: number;
-  description: string;
-  name: string;
-  groupId: number;
-}
-
-interface Group {
-  id: number;
-  name: string;
-}
-
-interface CreateNotePayload {
-  description: string;
-  name: string;
-  group: string;
-}
-
-interface CreateGroupPayload {
-  name?: string;
-}
-
-interface LoginPayload {
-  id?: number;
-  username: string;
-  password: string;
-}
-
-function DashboardScreen({navigation}) {
+const Dashboard = ({navigation}) => {
   const [isModalVisible, setModalVisible] = useState(false);
   const [modalEditNote, setModalEditNote] = useState(0);
   const [modalEditGroup, setModalEditGroup] = useState(0);
   const [modalCreateNote, setModalCreateNote] = useState(0);
-  const [notesData, setNotesData] = useState<Note[]>([]);
-  const [groupsData, setGroupsData] = useState<Group[]>([]);
+  const [notesData, setNotesData] = useState<any[]>([]);
+  const [groupsData, setGroupsData] = useState<any[]>([]);
 
   // validate form
   const createGroupValidate = yup.object().shape({
@@ -103,44 +36,54 @@ function DashboardScreen({navigation}) {
 
   // api call
 
-  const createNote = async (values: CreateNotePayload) => {
-    await axios.post(`${REACT_APP_API_URL}notes/`, values);
+  const createNote = async (values: any) => {
+    await axios.post(`${process.env.REACT_APP_API_URL}/notes/`, values);
     setModalCreateNote(0);
     fetchData();
   };
 
-  const updateNote = async (values: CreateNotePayload) => {
-    await axios.put(`${REACT_APP_API_URL}notes/${modalEditNote}/`, {
-      ...values,
-      id: modalEditNote,
-    });
+  const updateNote = async (values: any) => {
+    await axios.put(
+      `${process.env.REACT_APP_API_URL}/notes/${modalEditNote}/`,
+      {
+        ...values,
+        id: modalEditNote,
+      },
+    );
     setModalEditNote(0);
     fetchData();
   };
 
   const deleteNote = async () => {
-    await axios.delete(`${REACT_APP_API_URL}note/delete/${modalEditNote}`);
+    await axios.delete(
+      `${process.env.REACT_APP_API_URL}/note/delete/${modalEditNote}`,
+    );
     setModalEditNote(0);
     fetchData();
   };
 
-  const createGroup = async (values: CreateGroupPayload) => {
-    await axios.post(`${REACT_APP_API_URL}groups/`, values);
+  const createGroup = async (values: any) => {
+    await axios.post(`${process.env.REACT_APP_API_URL}/groups/`, values);
     setModalVisible(!isModalVisible);
     fetchData();
   };
 
   const deleteGroup = async () => {
-    await axios.delete(`${REACT_APP_API_URL}group/delete/${modalEditGroup}`);
+    await axios.delete(
+      `${process.env.REACT_APP_API_URL}/group/delete/${modalEditGroup}`,
+    );
     setModalEditGroup(0);
     fetchData();
   };
 
-  const updateGroup = async (values: CreateGroupPayload) => {
-    await axios.put(`${REACT_APP_API_URL}groups/${modalEditGroup}/`, {
-      ...values,
-      id: modalEditGroup,
-    });
+  const updateGroup = async (values: any) => {
+    await axios.put(
+      `${process.env.REACT_APP_API_URL}/groups/${modalEditGroup}/`,
+      {
+        ...values,
+        id: modalEditGroup,
+      },
+    );
     setModalEditGroup(0);
     fetchData();
   };
@@ -153,10 +96,12 @@ function DashboardScreen({navigation}) {
 
   async function fetchData() {
     setNotesData(
-      (await axios.get((REACT_APP_API_URL + 'notes') as string)).data,
+      (await axios.get(`${process.env.REACT_APP_API_URL}/notes` as string))
+        .data,
     );
     setGroupsData(
-      (await axios.get((REACT_APP_API_URL + 'groups') as string)).data,
+      (await axios.get(`${process.env.REACT_APP_API_URL}/groups` as string))
+        .data,
     );
   }
 
@@ -532,108 +477,6 @@ function DashboardScreen({navigation}) {
       </ScrollView>
     </>
   );
-}
-
-function LoginScreen({navigation}) {
-  const loginValidate = yup.object().shape({
-    username: yup.string().required(),
-    password: yup.string().min(3).required('Password is required'),
-  });
-
-  const login = async (values: LoginPayload) => {
-    const {data} = await axios.post(`${REACT_APP_API_URL}login`, values);
-    if (data.success) {
-      store.dispatch(loginAction(data));
-    }
-  };
-
-  store.subscribe(() => {
-    if (store.getState().value.id > 0) {
-      navigation.navigate('Dashboard');
-    }
-  });
-
-  return (
-    <View>
-      <Formik
-        validationSchema={loginValidate}
-        initialValues={{username: '', password: ''}}
-        onSubmit={values => login(values)}>
-        {({
-          handleChange,
-          handleBlur,
-          handleSubmit,
-          values,
-          errors,
-          touched,
-          isValid,
-        }) => (
-          <View
-            style={{
-              justifyContent: 'center',
-              alignItems: 'center',
-              backgroundColor: '#fff',
-              height: 300,
-            }}>
-            <Text>Username</Text>
-            <TextInput
-              style={{
-                width: '80%',
-                borderWidth: 2,
-              }}
-              onChangeText={handleChange('username')}
-              onBlur={handleBlur('username')}
-              value={values.username}
-            />
-            {errors.username && touched.username && (
-              <Text>{errors.username}</Text>
-            )}
-            <Text>Password</Text>
-            <TextInput
-              style={{
-                width: '80%',
-                borderWidth: 2,
-              }}
-              onChangeText={handleChange('password')}
-              onBlur={handleBlur('password')}
-              value={values.password}
-            />
-            {errors.password && touched.password && (
-              <Text>{errors.password}</Text>
-            )}
-            <View>
-              <Button
-                disabled={!isValid}
-                title="Login"
-                onPress={handleSubmit}
-              />
-            </View>
-          </View>
-        )}
-      </Formik>
-    </View>
-  );
-}
-
-const Stack = createNativeStackNavigator();
-
-const App = () => {
-  const isDarkMode = useColorScheme() === 'dark';
-
-  return (
-    <NavigationContainer>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <View
-        style={{
-          backgroundColor: isDarkMode ? Colors.black : Colors.white,
-        }}
-      />
-      <Stack.Navigator initialRouteName="Login">
-        <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen name="Dashboard" component={DashboardScreen} />
-      </Stack.Navigator>
-    </NavigationContainer>
-  );
 };
 
-export default App;
+export default Dashboard;
