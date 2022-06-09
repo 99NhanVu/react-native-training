@@ -5,7 +5,7 @@ import {Formik} from 'formik';
 import {loginAction, store} from '../Store';
 import React from 'react';
 
-const LoginContainers = ({navigation}) => {
+const Login = ({navigation}) => {
   const loginValidate = yup.object().shape({
     username: yup.string().required(),
     password: yup.string().min(3).required('Password is required'),
@@ -23,7 +23,7 @@ const LoginContainers = ({navigation}) => {
 
   store.subscribe(() => {
     if (store.getState().value.id > 0) {
-      navigation.navigate('Dashboard');
+      navigation.navigate('Group');
     }
   });
 
@@ -89,4 +89,4 @@ const LoginContainers = ({navigation}) => {
   );
 };
 
-export default LoginContainers;
+export default Login;

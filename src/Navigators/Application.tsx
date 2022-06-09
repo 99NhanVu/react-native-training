@@ -1,19 +1,20 @@
 import React from 'react';
-import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
-import Dashboard from '../Containers/Dashboard';
-import LoginContainers from '../Containers/Login';
+import Login from '../Containers/Login';
+import Group from '../Containers/Group';
+import Note from '../Containers/Note';
+import Details from '../Containers/Details';
 
 const Stack = createNativeStackNavigator();
 
 const ApplicationNavigation = () => {
   return (
-    <NavigationContainer>
-      <Stack.Navigator initialRouteName="Login">
-        <Stack.Screen name="Login" component={LoginContainers} />
-        <Stack.Screen name="Dashboard" component={Dashboard} />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <Stack.Navigator initialRouteName="Login">
+      <Stack.Screen name="Login" component={Login} />
+      <Stack.Screen name="Group" component={Group} />
+      <Stack.Screen name="Note" component={Note} />
+      <Stack.Screen name="Details" component={Details} />
+    </Stack.Navigator>
   );
 };
 
