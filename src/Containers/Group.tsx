@@ -2,7 +2,6 @@ import axios from 'axios';
 import {useEffect, useState} from 'react';
 import {Button, Text, TouchableOpacity, View} from 'react-native';
 import * as yup from 'yup';
-import {store} from '../Store';
 import React from 'react';
 import EditModal from '../Components/EditNoteModal';
 
@@ -54,9 +53,9 @@ const Group = ({navigation}) => {
   }
 
   useEffect(() => {
-    navigation.setOptions({
-      title: 'Welcome ' + store.getState().value.username.toString(),
-    });
+    // navigation.setOptions({
+    //   title: 'Welcome ' + store.getState().value.username.toString(),
+    // });
     fetchData();
   }, [navigation]);
 
