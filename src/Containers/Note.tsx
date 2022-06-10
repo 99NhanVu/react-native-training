@@ -4,27 +4,25 @@ import axios from 'axios';
 import EditModal from '../Components/EditNoteModal';
 import {createNoteValidate} from '../Validations/note';
 import {useIsFocused} from '@react-navigation/native';
+import {addNoteRequest, fetchNoteRequest} from '../Store/Note/actions';
+import {useSelector, useDispatch} from 'react-redux';
 
 const Note = ({route, navigation}) => {
   const {groupId, groupName} = route.params;
-  const [notesData, setNotesData] = useState<any[]>([]);
   const [createNote, setCreateNote] = useState(false);
   const isFocused = useIsFocused();
+  const dispatch = useDispatch();
+  const notesData = useSelector((state: any) => state.note.notes);
+  const [numberItems, setNumberItems] = useState(2);
 
-  const postNote = async (values: any) => {
+  const postNote = (values: any) => {
     setCreateNote(false);
-    await axios.post(`${process.env.REACT_APP_API_URL}/notes/`, values);
-    fetchData();
+    dispatch(addNoteRequest({...values, groupId}));
+    dispatch(fetchNoteRequest(groupId));
   };
 
   async function fetchData() {
-    setNotesData(
-      (
-        await axios.get(
-          `${process.env.REACT_APP_API_URL}/group/${groupId}` as string,
-        )
-      ).data,
-    );
+    dispatch(fetchNoteRequest(groupId));
   }
 
   useEffect(() => {
@@ -32,34 +30,46 @@ const Note = ({route, navigation}) => {
     navigation.setOptions({title: groupName, groupId});
   }, [isFocused]);
 
-  const notes = notesData.map(note => {
-    return (
-      <TouchableOpacity
-        key={note.id}
-        style={{
-          backgroundColor: 'gray',
-          margin: 10,
-        }}
-        onPress={() => {
-          navigation.navigate('Details', {note, groupName, groupId});
-        }}>
-        <View>
-          <Text
-            style={{
-              textAlign: 'center',
-              fontWeight: 'bold',
-              fontSize: 20,
-            }}>
-            {note.name}
-          </Text>
-        </View>
-      </TouchableOpacity>
-    );
+  const notes = notesData.map((note: any, index: number) => {
+    if (index < numberItems)
+      return (
+        <TouchableOpacity
+          key={note.id}
+          style={{
+            backgroundColor: 'gray',
+            margin: 10,
+          }}
+          onPress={() => {
+            navigation.navigate('Details', {note, groupName, groupId});
+          }}>
+          <View>
+            <Text
+              style={{
+                textAlign: 'center',
+                fontWeight: 'bold',
+                fontSize: 20,
+              }}>
+              {note.name}
+            </Text>
+          </View>
+        </TouchableOpacity>
+      );
   });
 
   return (
     <>
       <View>{notes}</View>
+      {numberItems <= notesData.length ? (
+        <View
+          style={{
+            margin: 30,
+          }}>
+          <Button
+            title="Show More"
+            onPress={() => setNumberItems(numberItems + 2)}
+          />
+        </View>
+      ) : null}
       <View
         style={{
           margin: 20,

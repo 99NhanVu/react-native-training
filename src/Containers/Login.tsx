@@ -1,9 +1,9 @@
 import * as yup from 'yup';
-import axios from 'axios';
 import {Button, Text, TextInput, View} from 'react-native';
 import {Formik} from 'formik';
-import {loginAction, store} from '../Store';
+// import {loginAction, store} from '../Store';
 import React from 'react';
+import axios from 'axios';
 
 const Login = ({navigation}) => {
   const loginValidate = yup.object().shape({
@@ -17,15 +17,15 @@ const Login = ({navigation}) => {
       values,
     );
     if (data.success) {
-      store.dispatch(loginAction(data));
+      // store.dispatch(loginAction(data));
     }
   };
 
-  store.subscribe(() => {
-    if (store.getState().value.id > 0) {
-      navigation.navigate('Group');
-    }
-  });
+  // store.subscribe(() => {
+  //   if (store.getState().value.id > 0) {
+  //     navigation.navigate('Group');
+  //   }
+  // });
 
   return (
     <View>
