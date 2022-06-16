@@ -5,12 +5,9 @@ import * as yup from 'yup';
 import React from 'react';
 import EditModal from '../Components/EditNoteModal';
 
-const Group = ({navigation}) => {
+const Group = ({navigation}: any) => {
   const [createGroup, setCreateGroup] = useState(false);
-  const [modalEditNote, setModalEditNote] = useState(0);
   const [modalEditGroup, setModalEditGroup] = useState<any>(false);
-  const [modalCreateNote, setModalCreateNote] = useState(0);
-  const [notesData, setNotesData] = useState<any[]>([]);
   const [groupsData, setGroupsData] = useState<any[]>([]);
 
   // validate form
@@ -27,10 +24,10 @@ const Group = ({navigation}) => {
 
   const deleteGroup = async () => {
     setModalEditGroup(false);
-    navigation.goBack();
     await axios.delete(
       `${process.env.REACT_APP_API_URL}/group/delete/${modalEditGroup.id}`,
     );
+    fetchData();
   };
 
   const updateGroup = async (values: any) => {

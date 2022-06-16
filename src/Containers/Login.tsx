@@ -17,7 +17,7 @@ const Login = ({navigation}) => {
       values,
     );
     if (data.success) {
-      // store.dispatch(loginAction(data));
+      navigation.navigate('Group');
     }
   };
 

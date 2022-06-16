@@ -2,17 +2,19 @@ import {Text, TouchableOpacity, View} from 'react-native';
 import React, {useState} from 'react';
 import EditModal from '../Components/EditNoteModal';
 import {createNoteValidate} from '../Validations/note';
-import axios from 'axios';
+import {deleteNoteRequest, updateNoteRequest} from '../Store/Note/actions';
+import {useDispatch} from 'react-redux';
+import {useSelector} from 'react-redux';
 
-const Details = ({route, navigation}) => {
+const Details = ({route, navigation}: any) => {
   const {groupName, groupId} = route.params;
-  const [note, setNote] = useState(route.params.note);
+  // const [note, setNote] = useState(route.params.note);
+  const note = useSelector((state: any) => state.note.currentNote);
   const [editNote, setEditNote] = useState<any>(false);
+  const dispatch = useDispatch();
 
   const deleteNote = async () => {
-    await axios.delete(
-      `${process.env.REACT_APP_API_URL}/note/delete/${editNote.id}`,
-    );
+    dispatch(deleteNoteRequest(editNote));
     navigation.navigate('Note', {
       groupId,
       groupName,
@@ -21,14 +23,7 @@ const Details = ({route, navigation}) => {
 
   const updateNote = async (values: any) => {
     setEditNote(false);
-    const {data} = await axios.put(
-      `${process.env.REACT_APP_API_URL}/notes/${editNote.id}/`,
-      {
-        ...values,
-        id: editNote.id,
-      },
-    );
-    setNote(data);
+    dispatch(updateNoteRequest({...values, id: editNote.id}));
   };
   return (
     <>
