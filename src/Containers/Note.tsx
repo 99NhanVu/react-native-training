@@ -1,16 +1,19 @@
-import {Button, Text, TouchableOpacity, View} from 'react-native';
+import {Button, ScrollView, Text, TouchableOpacity, View} from 'react-native';
 import React, {useEffect, useState} from 'react';
 import axios from 'axios';
 import EditModal from '../Components/EditNoteModal';
 import {createNoteValidate} from '../Validations/note';
 import {useIsFocused} from '@react-navigation/native';
-import {addNoteRequest, fetchNoteRequest} from '../Store/Note/actions';
+import {
+  addNoteRequest,
+  fetchNoteRequest,
+  focusNote,
+} from '../Store/Note/actions';
 import {useSelector, useDispatch} from 'react-redux';
 
-const Note = ({route, navigation}) => {
+const Note = ({route, navigation}: any) => {
   const {groupId, groupName} = route.params;
   const [createNote, setCreateNote] = useState(false);
-  const isFocused = useIsFocused();
   const dispatch = useDispatch();
   const notesData = useSelector((state: any) => state.note.notes);
   const [numberItems, setNumberItems] = useState(2);
@@ -18,7 +21,6 @@ const Note = ({route, navigation}) => {
   const postNote = (values: any) => {
     setCreateNote(false);
     dispatch(addNoteRequest({...values, groupId}));
-    dispatch(fetchNoteRequest(groupId));
   };
 
   async function fetchData() {
@@ -28,7 +30,7 @@ const Note = ({route, navigation}) => {
   useEffect(() => {
     fetchData();
     navigation.setOptions({title: groupName, groupId});
-  }, [isFocused]);
+  }, []);
 
   const notes = notesData.map((note: any, index: number) => {
     if (index < numberItems)
@@ -40,6 +42,7 @@ const Note = ({route, navigation}) => {
             margin: 10,
           }}
           onPress={() => {
+            dispatch(focusNote(note));
             navigation.navigate('Details', {note, groupName, groupId});
           }}>
           <View>
@@ -58,43 +61,45 @@ const Note = ({route, navigation}) => {
 
   return (
     <>
-      <View>{notes}</View>
-      {numberItems <= notesData.length ? (
+      <ScrollView>
+        <View>{notes}</View>
+        {numberItems <= notesData.length ? (
+          <View
+            style={{
+              margin: 30,
+            }}>
+            <Button
+              title="Show More"
+              onPress={() => setNumberItems(numberItems + 2)}
+            />
+          </View>
+        ) : null}
         <View
           style={{
-            margin: 30,
+            margin: 20,
           }}>
           <Button
-            title="Show More"
-            onPress={() => setNumberItems(numberItems + 2)}
+            title="Add note"
+            onPress={() => {
+              setCreateNote(true);
+            }}
           />
         </View>
-      ) : null}
-      <View
-        style={{
-          margin: 20,
-        }}>
-        <Button
-          title="Add note"
-          onPress={() => {
-            setCreateNote(true);
+        {/* Create note modal */}
+        <EditModal
+          note={createNote}
+          validationSchema={createNoteValidate}
+          onClose={() => {
+            setCreateNote(false);
+          }}
+          onSubmit={postNote}
+          initialValues={{
+            name: '',
+            description: '',
+            group: '',
           }}
         />
-      </View>
-      {/* Create note modal */}
-      <EditModal
-        note={createNote}
-        validationSchema={createNoteValidate}
-        onClose={() => {
-          setCreateNote(false);
-        }}
-        onSubmit={postNote}
-        initialValues={{
-          name: '',
-          description: '',
-          group: '',
-        }}
-      />
+      </ScrollView>
     </>
   );
 };
