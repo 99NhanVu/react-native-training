@@ -1,9 +1,8 @@
 import {Button, ScrollView, Text, TouchableOpacity, View} from 'react-native';
 import React, {useEffect, useState} from 'react';
-import axios from 'axios';
 import EditModal from '../Components/EditNoteModal';
 import {createNoteValidate} from '../Validations/note';
-import {useIsFocused} from '@react-navigation/native';
+
 import {
   addNoteRequest,
   fetchNoteRequest,
@@ -11,8 +10,8 @@ import {
 } from '../Store/Note/actions';
 import {useSelector, useDispatch} from 'react-redux';
 
-const Note = ({route, navigation}: any) => {
-  const {groupId, groupName} = route.params;
+const Note = ({navigation}: any) => {
+  const currentGroup = useSelector((state: any) => state.group.currentGroup);
   const [createNote, setCreateNote] = useState(false);
   const dispatch = useDispatch();
   const notesData = useSelector((state: any) => state.note.notes);
@@ -20,16 +19,16 @@ const Note = ({route, navigation}: any) => {
 
   const postNote = (values: any) => {
     setCreateNote(false);
-    dispatch(addNoteRequest({...values, groupId}));
+    dispatch(addNoteRequest({...values}));
   };
 
   async function fetchData() {
-    dispatch(fetchNoteRequest(groupId));
+    dispatch(fetchNoteRequest(currentGroup.id));
   }
 
   useEffect(() => {
     fetchData();
-    navigation.setOptions({title: groupName, groupId});
+    navigation.setOptions({title: currentGroup.name});
   }, []);
 
   const notes = notesData.map((note: any, index: number) => {
@@ -43,7 +42,7 @@ const Note = ({route, navigation}: any) => {
           }}
           onPress={() => {
             dispatch(focusNote(note));
-            navigation.navigate('Details', {note, groupName, groupId});
+            navigation.navigate('Details');
           }}>
           <View>
             <Text

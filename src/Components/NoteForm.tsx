@@ -1,7 +1,7 @@
 import {Button, Text, TextInput, View} from 'react-native';
 import SelectDropdown from 'react-native-select-dropdown';
-import React, {useEffect} from 'react';
-import axios from 'axios';
+import React from 'react';
+import {useSelector} from 'react-redux';
 
 const NoteForm = (props: any) => {
   const {
@@ -16,17 +16,9 @@ const NoteForm = (props: any) => {
     onDelete,
   } = props;
 
-  const [dropdownData, setDropdownData] = React.useState([]);
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    const {data} = await axios.get(
-      `${process.env.REACT_APP_API_URL}/groups` as string,
-    );
-    setDropdownData(data.map((group: any) => group.name));
-  };
+  const dropdownData = useSelector((state: any) =>
+    state.group.groups.map((group: any) => group.name),
+  );
 
   return (
     <>

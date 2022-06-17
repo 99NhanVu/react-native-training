@@ -1,14 +1,22 @@
-import axios from 'axios';
 import {useEffect, useState} from 'react';
 import {Button, Text, TouchableOpacity, View} from 'react-native';
 import * as yup from 'yup';
 import React from 'react';
 import EditModal from '../Components/EditNoteModal';
+import {useDispatch, useSelector} from 'react-redux';
+import {
+  createGroupRequest,
+  deleteGroupRequest,
+  fetchGroupRequest,
+  focusGroup,
+  updateGroupRequest,
+} from '../Store/Group/actions';
 
 const Group = ({navigation}: any) => {
   const [createGroup, setCreateGroup] = useState(false);
   const [modalEditGroup, setModalEditGroup] = useState<any>(false);
-  const [groupsData, setGroupsData] = useState<any[]>([]);
+  const groupsData = useSelector((state: any) => state.group.groups);
+  const dispatch = useDispatch();
 
   // validate form
   const createGroupValidate = yup.object().shape({
@@ -18,35 +26,26 @@ const Group = ({navigation}: any) => {
   // api call
   const postGroup = async (values: any) => {
     setCreateGroup(false);
-    await axios.post(`${process.env.REACT_APP_API_URL}/groups/`, values);
-    fetchData();
+    dispatch(createGroupRequest(values));
   };
 
   const deleteGroup = async () => {
     setModalEditGroup(false);
-    await axios.delete(
-      `${process.env.REACT_APP_API_URL}/group/delete/${modalEditGroup.id}`,
-    );
-    fetchData();
+    dispatch(deleteGroupRequest(modalEditGroup));
   };
 
   const updateGroup = async (values: any) => {
-    await axios.put(
-      `${process.env.REACT_APP_API_URL}/groups/${modalEditGroup}/`,
-      {
+    setModalEditGroup(false);
+    dispatch(
+      updateGroupRequest({
         ...values,
         id: modalEditGroup.id,
-      },
+      }),
     );
-    setModalEditGroup(false);
-    fetchData();
   };
 
   async function fetchData() {
-    setGroupsData(
-      (await axios.get(`${process.env.REACT_APP_API_URL}/groups` as string))
-        .data,
-    );
+    dispatch(fetchGroupRequest());
   }
 
   useEffect(() => {
@@ -56,11 +55,12 @@ const Group = ({navigation}: any) => {
     fetchData();
   }, [navigation]);
 
-  const groups = groupsData.map(group => {
+  const groups = groupsData.map((group: any) => {
     return (
       <TouchableOpacity
         key={group.id}
         onPress={() => {
+          dispatch(focusGroup(group));
           navigation.navigate('Note', {
             groupId: group.id,
             groupName: group.name,
