@@ -9,7 +9,7 @@ const Stack = createNativeStackNavigator();
 
 const ApplicationNavigation = () => {
   return (
-    <Stack.Navigator initialRouteName="Group">
+    <Stack.Navigator initialRouteName="Login">
       <Stack.Screen name="Login" component={Login} />
       <Stack.Screen name="Group" component={Group} />
       <Stack.Screen name="Note" component={Note} />

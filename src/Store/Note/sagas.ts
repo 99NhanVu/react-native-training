@@ -16,7 +16,7 @@ import {addNote, deleteNote, getNotes, updateNote} from './apis';
 
 function* fetchNoteSaga(action: any) {
   try {
-    const response = yield call(getNotes, action.groupId);
+    const response = yield call(getNotes, action.payload);
     yield put(
       fetchNoteSuccess({
         notes: response.data,
