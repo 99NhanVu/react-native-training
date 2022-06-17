@@ -1,7 +1,9 @@
 import axios from 'axios';
 
-export const getNotes = (groupId: number) =>
-  axios.get(`${process.env.REACT_APP_API_URL}/group/${groupId}` as string);
+export const getNotes = (payload: any) =>
+  axios.get(
+    `${process.env.REACT_APP_API_URL}/group/${payload.groupId}?offset=${payload.offset}&limit=${payload.limit}`,
+  );
 
 export const addNote = (payload: any) =>
   axios.post(`${process.env.REACT_APP_API_URL}/notes/`, payload);

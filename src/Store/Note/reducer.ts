@@ -38,10 +38,11 @@ export default (state = initialState, action: any) => {
         pending: true,
       };
     case FETCH_NOTE_SUCCESS:
+      const fetchedNotes = [...state.notes, ...action.payload.notes];
       return {
         ...state,
         pending: false,
-        notes: action.payload.notes,
+        notes: fetchedNotes,
         error: null,
       };
     case UPDATE_NOTE_SUCCESS:

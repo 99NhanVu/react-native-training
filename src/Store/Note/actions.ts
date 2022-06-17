@@ -11,9 +11,9 @@ import {
   ADD_NOTE_SUCCESS,
 } from './actionTypes';
 
-export const fetchNoteRequest = (groupId: number): any => ({
+export const fetchNoteRequest = (payload: any): any => ({
   type: FETCH_NOTE_REQUEST,
-  groupId,
+  payload,
 });
 export const fetchNoteSuccess = (payload: any): any => ({
   type: FETCH_NOTE_SUCCESS,

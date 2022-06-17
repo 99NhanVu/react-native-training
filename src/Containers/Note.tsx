@@ -15,7 +15,7 @@ const Note = ({navigation}: any) => {
   const [createNote, setCreateNote] = useState(false);
   const dispatch = useDispatch();
   const notesData = useSelector((state: any) => state.note.notes);
-  const [numberItems, setNumberItems] = useState(2);
+  const [numberItems, setNumberItems] = useState(5);
 
   const postNote = (values: any) => {
     setCreateNote(false);
@@ -23,13 +23,19 @@ const Note = ({navigation}: any) => {
   };
 
   async function fetchData() {
-    dispatch(fetchNoteRequest(currentGroup.id));
+    dispatch(
+      fetchNoteRequest({
+        groupId: currentGroup.id,
+        offset: numberItems,
+        limit: 5,
+      }),
+    );
   }
 
   useEffect(() => {
     fetchData();
     navigation.setOptions({title: currentGroup.name});
-  }, []);
+  }, [numberItems]);
 
   const notes = notesData.map((note: any, index: number) => {
     if (index < numberItems)
@@ -62,14 +68,14 @@ const Note = ({navigation}: any) => {
     <>
       <ScrollView>
         <View>{notes}</View>
-        {numberItems <= notesData.length ? (
+        {numberItems < notesData[0]?.total ?? [0] ? (
           <View
             style={{
               margin: 30,
             }}>
             <Button
               title="Show More"
-              onPress={() => setNumberItems(numberItems + 2)}
+              onPress={() => setNumberItems(numberItems + 5)}
             />
           </View>
         ) : null}
