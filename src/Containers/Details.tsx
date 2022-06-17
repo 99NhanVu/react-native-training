@@ -3,22 +3,18 @@ import React, {useState} from 'react';
 import EditModal from '../Components/EditNoteModal';
 import {createNoteValidate} from '../Validations/note';
 import {deleteNoteRequest, updateNoteRequest} from '../Store/Note/actions';
-import {useDispatch} from 'react-redux';
-import {useSelector} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 
-const Details = ({route, navigation}: any) => {
-  const {groupName, groupId} = route.params;
-  // const [note, setNote] = useState(route.params.note);
+const Details = ({navigation}: any) => {
   const note = useSelector((state: any) => state.note.currentNote);
+  const groupName = useSelector((state: any) => state.group.currentGroup.name);
+
   const [editNote, setEditNote] = useState<any>(false);
   const dispatch = useDispatch();
 
   const deleteNote = async () => {
     dispatch(deleteNoteRequest(editNote));
-    navigation.navigate('Note', {
-      groupId,
-      groupName,
-    });
+    navigation.navigate('Note');
   };
 
   const updateNote = async (values: any) => {

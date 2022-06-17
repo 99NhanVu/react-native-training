@@ -11,11 +11,8 @@ import {
   deleteNoteSuccess,
   addNoteSuccess,
 } from './actions';
-import axios from 'axios';
 import {all, call, put, takeLatest} from 'redux-saga/effects';
-
-const getNotes = (groupId: number) =>
-  axios.get(`${process.env.REACT_APP_API_URL}/group/${groupId}` as string);
+import {addNote, deleteNote, getNotes, updateNote} from './apis';
 
 function* fetchNoteSaga(action: any) {
   try {
@@ -34,9 +31,6 @@ function* fetchNoteSaga(action: any) {
   }
 }
 
-const addNote = (payload: any) =>
-  axios.post(`${process.env.REACT_APP_API_URL}/notes/`, payload);
-
 function* addNoteSaga(action: any) {
   try {
     const response = yield call(addNote, action.payload);
@@ -52,9 +46,6 @@ function* addNoteSaga(action: any) {
   }
 }
 
-const updateNote = (payload: any) =>
-  axios.put(`${process.env.REACT_APP_API_URL}/notes/${payload.id}`, payload);
-
 function* updateNoteSaga(action: any) {
   try {
     const response = yield call(updateNote, action.payload);
@@ -68,9 +59,6 @@ function* updateNoteSaga(action: any) {
     );
   }
 }
-
-const deleteNote = (payload: any) =>
-  axios.delete(`${process.env.REACT_APP_API_URL}/note/delete/${payload.id}`);
 
 function* deleteNoteSaga(action: any) {
   try {
